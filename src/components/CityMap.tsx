@@ -29,7 +29,6 @@ export function CityMap() {
     setLoading(true);
     setError(null);
     try {
-      // Sur Android le geocoding exige la permission de localisation.
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setError('Permission de localisation refusée.');
@@ -54,7 +53,6 @@ export function CityMap() {
 
   const cameraPosition = { coordinates: center, zoom: 11 };
   const markers = [{ id: 'ville', coordinates: center, title: label }];
-  // On force le re-centrage en remontant la carte quand le centre change.
   const mapKey = `${center.latitude},${center.longitude}`;
 
   return (
@@ -73,11 +71,7 @@ export function CityMap() {
           style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
           onPress={searchCity}
           disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>OK</Text>
-          )}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>OK</Text>}
         </Pressable>
       </View>
 
@@ -106,35 +100,11 @@ export function CityMap() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  searchBar: {
-    flexDirection: 'row',
-    gap: 8,
-    padding: 12,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#208AEF',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 56,
-  },
+  searchBar: { flexDirection: 'row', gap: 8, padding: 12 },
+  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
+  button: { backgroundColor: '#208AEF', borderRadius: 12, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center', minWidth: 56 },
   buttonPressed: { opacity: 0.85 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  error: {
-    color: '#dc2626',
-    textAlign: 'center',
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-  },
+  error: { color: '#dc2626', textAlign: 'center', paddingHorizontal: 12, paddingBottom: 8 },
   mapWrapper: { flex: 1, overflow: 'hidden' },
 });

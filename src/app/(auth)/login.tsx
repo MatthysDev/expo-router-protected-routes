@@ -11,8 +11,6 @@ export default function LoginScreen() {
   async function handleLogin() {
     setBusy(true);
     try {
-      // Le web n'a pas de capteur biométrique : on connecte directement
-      // pour que la démo de redirection marche aussi dans le navigateur.
       if (Platform.OS === 'web') {
         await signIn();
         return;
@@ -20,9 +18,6 @@ export default function LoginScreen() {
 
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-      // Pas de biométrie enrôlée (ex : simulateur sans Face ID configuré) :
-      // on connecte directement pour que la démo de redirection marche partout.
       if (!hasHardware || !isEnrolled) {
         await signIn();
         return;
@@ -31,16 +26,9 @@ export default function LoginScreen() {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Connexion à l’application',
         cancelLabel: 'Annuler',
-        // false = autorise le code de l'appareil en secours si la biométrie échoue
         disableDeviceFallback: false,
       });
-
-      // Succès → on persiste la session. Le guard du _layout racine bascule
-      // et Expo Router redirige TOUT SEUL vers le groupe (app).
-      // Échec / annulation → on ne fait rien, l'élève peut réessayer.
-      if (result.success) {
-        await signIn();
-      }
+      if (result.success) await signIn();
     } finally {
       setBusy(false);
     }
@@ -70,47 +58,11 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-    gap: 12,
-  },
-  badge: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#b45309',
-    letterSpacing: 1,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#555',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: '#208AEF',
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    borderRadius: 14,
-    minWidth: 240,
-    alignItems: 'center',
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#fff', gap: 12 },
+  badge: { fontSize: 13, fontWeight: '700', color: '#b45309', letterSpacing: 1 },
+  title: { fontSize: 24, fontWeight: '800', color: '#111', textAlign: 'center' },
+  subtitle: { fontSize: 15, color: '#555', textAlign: 'center', lineHeight: 22, marginBottom: 16 },
+  button: { backgroundColor: '#208AEF', paddingVertical: 16, paddingHorizontal: 28, borderRadius: 14, minWidth: 240, alignItems: 'center' },
+  buttonPressed: { opacity: 0.85 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

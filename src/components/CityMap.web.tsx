@@ -1,7 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-// expo-maps n'a pas de support web. On affiche un message clair plutôt
-// que de casser le bundle web (la démo de redirection reste testable au web).
 export function CityMap() {
   return (
     <View style={styles.container}>
@@ -16,14 +14,7 @@ export function CityMap() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 10,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10, backgroundColor: '#fff' },
   emoji: { fontSize: 48 },
   title: { fontSize: 20, fontWeight: '800', color: '#111' },
   text: { fontSize: 15, color: '#555', textAlign: 'center', lineHeight: 22 },
