@@ -1,56 +1,88 @@
-# Welcome to your Expo app 👋
+# Expo Router — Routes protégées & redirection automatique 🔐
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Projet **pédagogique** pour montrer aux élèves comment fonctionne la redirection
+entre une zone **connectée** et une zone **non connectée** avec **Expo Router v5**
+(SDK 55), une session **persistée** (`expo-secure-store`) et un déverrouillage
+**Face ID / empreinte** (`expo-local-authentication`).
 
-## Get started
+## L'idée en une phrase
 
-1. Install dependencies
+Deux groupes de routes, deux Stacks. Un `guard` booléen décide lequel est
+accessible. Quand le `guard` change (login / logout), **Expo Router redirige
+tout seul** — il n'y a *aucun* `router.replace()` écrit à la main.
 
-   ```bash
-   npm install
-   ```
+## Structure des routes
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+src/
+  ctx/
+    auth.tsx              # Context : isLoggedIn, isLoading, signIn(), signOut()
+  app/
+    _layout.tsx           # ⭐ Le cœur : <Stack.Protected guard={...}>
+    (auth)/               # GROUPE NON PROTÉGÉ (déconnecté)
+      _layout.tsx
+      login.tsx           # Bouton "Se connecter avec Face ID"
+    (app)/                # GROUPE PROTÉGÉ (connecté)
+      _layout.tsx
+      index.tsx           # Écran d'accueil + bouton "Se déconnecter"
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Le mécanisme à montrer (src/app/_layout.tsx)
 
-### Other setup steps
+```tsx
+<Stack screenOptions={{ headerShown: false }}>
+  <Stack.Protected guard={isLoggedIn}>
+    <Stack.Screen name="(app)" />     {/* visible seulement si connecté */}
+  </Stack.Protected>
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+  <Stack.Protected guard={!isLoggedIn}>
+    <Stack.Screen name="(auth)" />    {/* visible seulement si déconnecté */}
+  </Stack.Protected>
+</Stack>
+```
 
-## Learn more
+`<Stack.Protected>` surveille son `guard`. Dès qu'il bascule, le groupe devenu
+inaccessible est retiré et l'utilisateur est redirigé vers le groupe accessible.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Le flux complet
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. **Lancement** : on lit la session dans le coffre sécurisé (`SecureStore`).
+   Le splash reste affiché pendant ce temps (`isLoading`).
+2. **Connexion** : `login.tsx` appelle `LocalAuthentication.authenticateAsync()`
+   (Face ID). En cas de succès → la session est persistée → `guard` bascule →
+   **redirection auto vers `(app)`**.
+3. **Déconnexion** : on efface la session → `guard` rebascule →
+   **redirection auto vers `(auth)/login`**.
+4. **Relance de l'app** : la session est toujours dans `SecureStore`, donc on
+   reste connecté sans repasser par Face ID.
 
-## Join the community
+## Démarrer
 
-Join our community of developers creating universal apps.
+```bash
+npm install
+npx expo start
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## ⚠️ Important : Face ID ne marche pas dans Expo Go
+
+Le message de permission `NSFaceIDUsageDescription` vient du config plugin :
+il faut donc un **development build**, pas Expo Go.
+
+- **iOS (development build)** : `npx expo run:ios`
+- **Simulateur iOS** : Face ID fonctionne si vous l'activez via
+  *Features → Face ID → Enrolled* (puis *Matching/Non-Matching Face* pour
+  simuler un succès/échec).
+- **Android** : `npx expo run:android`, biométrie simulée via l'émulateur.
+- **Web** (`npx expo start --web`) : pas de capteur biométrique → la connexion
+  se fait directement, ce qui permet quand même de **démontrer la redirection**.
+
+## Idées d'exercices pour les élèves
+
+- Ajouter un écran `register` dans `(auth)` et naviguer entre `login` et
+  `register` (navigation **interne** à une stack non protégée).
+- Ajouter un second onglet/écran dans `(app)` et observer que tout le groupe
+  est protégé d'un coup.
+- Exiger Face ID **à chaque relance** (re-prompt au démarrage dans `auth.tsx`
+  au lieu de faire confiance à la session stockée).
+- Remplacer le `guard` booléen par un rôle (`user` / `admin`) et protéger une
+  route admin.
