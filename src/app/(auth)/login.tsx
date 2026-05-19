@@ -1,6 +1,6 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/ctx/auth';
 
@@ -21,12 +21,10 @@ export default function LoginScreen() {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
+      // Pas de biométrie enrôlée (ex : simulateur sans Face ID configuré) :
+      // on connecte directement pour que la démo de redirection marche partout.
       if (!hasHardware || !isEnrolled) {
-        Alert.alert(
-          'Biométrie indisponible',
-          "Aucune Face ID / empreinte configurée sur cet appareil. " +
-            "Sur simulateur iOS : Features → Face ID → Enrolled.",
-        );
+        await signIn();
         return;
       }
 
@@ -37,12 +35,11 @@ export default function LoginScreen() {
         disableDeviceFallback: false,
       });
 
+      // Succès → on persiste la session. Le guard du _layout racine bascule
+      // et Expo Router redirige TOUT SEUL vers le groupe (app).
+      // Échec / annulation → on ne fait rien, l'élève peut réessayer.
       if (result.success) {
-        // Succès → on persiste la session. Le guard du _layout racine bascule
-        // et Expo Router redirige TOUT SEUL vers le groupe (app).
         await signIn();
-      } else {
-        Alert.alert('Échec', "L’authentification n’a pas abouti.");
       }
     } finally {
       setBusy(false);
