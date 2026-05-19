@@ -22,10 +22,28 @@ src/
     (auth)/               # GROUPE NON PROTÉGÉ (déconnecté)
       _layout.tsx
       login.tsx           # Bouton "Se connecter avec Face ID"
-    (app)/                # GROUPE PROTÉGÉ (connecté)
-      _layout.tsx
-      index.tsx           # Écran d'accueil + bouton "Se déconnecter"
+    (app)/                # GROUPE PROTÉGÉ (connecté) — barre d'onglets
+      _layout.tsx         # <Tabs> : 4 onglets, tout le groupe est protégé
+      index.tsx           # Accueil + bouton "Se déconnecter"
+      map.tsx             # Carte (expo-maps) + recherche de ville
+      animation.tsx       # Animation Reanimated (échelle/rotation/couleur)
+      photo.tsx           # Sélection photo + copie locale persistante
+  components/
+    CityMap.tsx           # Carte native (iOS Apple / Android Google)
+    CityMap.web.tsx       # Fallback web (expo-maps n'a pas de web)
 ```
+
+## La zone connectée (onglets)
+
+Une fois connecté, le groupe `(app)` devient une **barre d'onglets**. Tout le
+groupe reste protégé : la déconnexion fait disparaître les 4 onglets d'un coup.
+
+| Onglet | Ce qu'il montre | Libs |
+|---|---|---|
+| **Accueil** | Bouton de déconnexion (retour auto au login) | — |
+| **Carte** | Carte + champ "chercher une ville" (geocoding → recentrage + marqueur) | `expo-maps`, `expo-location` |
+| **Animation** | Une valeur partagée anime échelle, rotation, arrondi et couleur | `react-native-reanimated` |
+| **Photo** | Choisir une photo, copiée dans le dossier local de l'app, rechargée au prochain lancement | `expo-image-picker`, `expo-file-system` |
 
 ## Le mécanisme à montrer (src/app/_layout.tsx)
 
@@ -75,6 +93,16 @@ il faut donc un **development build**, pas Expo Go.
 - **Android** : `npx expo run:android`, biométrie simulée via l'émulateur.
 - **Web** (`npx expo start --web`) : pas de capteur biométrique → la connexion
   se fait directement, ce qui permet quand même de **démontrer la redirection**.
+
+## ⚠️ La carte (expo-maps)
+
+- `expo-maps` ne marche **pas dans Expo Go** ni sur le web → development build.
+- **iOS** : Apple Maps fonctionne sur simulateur **sans clé API**.
+- **Android** : Google Maps exige une **clé API Google Maps** à mettre dans
+  `app.json` → `android.config.googleMaps.apiKey`. Sans elle, l'onglet Carte
+  reste gris sur Android (les autres onglets fonctionnent).
+- La recherche de ville utilise `Location.geocodeAsync` (forward geocoding) ;
+  sur Android la permission de localisation est demandée au premier appel.
 
 ## Idées d'exercices pour les élèves
 

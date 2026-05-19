@@ -46,6 +46,25 @@
         {
           "faceIDPermission": "Autoriser $(PRODUCT_NAME) à utiliser Face ID pour vous connecter."
         }
+      ],
+      [
+        "expo-maps",
+        {
+          "requestLocationPermission": true,
+          "locationPermission": "Autoriser $(PRODUCT_NAME) à utiliser votre position sur la carte."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Autoriser $(PRODUCT_NAME) à utiliser votre position pour rechercher une ville."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autoriser $(PRODUCT_NAME) à accéder à vos photos pour en choisir une."
+        }
       ]
     ],
     "experiments": {
