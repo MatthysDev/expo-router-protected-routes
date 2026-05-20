@@ -98,11 +98,95 @@ il faut donc un **development build**, pas Expo Go.
 
 - `expo-maps` ne marche **pas dans Expo Go** ni sur le web → development build.
 - **iOS** : Apple Maps fonctionne sur simulateur **sans clé API**.
-- **Android** : Google Maps exige une **clé API Google Maps** à mettre dans
-  `app.json` → `android.config.googleMaps.apiKey`. Sans elle, l'onglet Carte
-  reste gris sur Android (les autres onglets fonctionnent).
+- **Android** : Google Maps exige **obligatoirement** une clé API Google Maps.
+  Sans elle, **l'app crashe** dès qu'on ouvre l'onglet Carte (ce n'est pas
+  juste une carte grise — le `GoogleMaps.View` natif ne s'initialise pas).
 - La recherche de ville utilise `Location.geocodeAsync` (forward geocoding) ;
   sur Android la permission de localisation est demandée au premier appel.
+
+### Obtenir et configurer la clé Google Maps API (Android)
+
+**1. Créer un projet Google Cloud + activer l'API**
+
+- Aller sur la [Google Cloud Console](https://console.cloud.google.com/apis).
+- Créer un nouveau projet (ou en sélectionner un existant).
+- Dans **APIs & Services → Library**, chercher **Maps SDK for Android** et
+  cliquer sur **Enable**.
+
+**2. Récupérer l'empreinte SHA-1 de l'app**
+
+Google restreint les clés API à un couple `package name + SHA-1` pour éviter
+les abus. Pour un build de développement local :
+
+```bash
+keytool -list -v \
+  -keystore ~/.android/debug.keystore \
+  -alias androiddebugkey \
+  -storepass android \
+  -keypass android
+```
+
+Copier la ligne `SHA1:` (format `XX:XX:XX:...`).
+
+> Pour une app publiée sur le Play Store, utiliser à la place la SHA-1 trouvée
+> dans **Google Play Console → (votre app) → Release → Setup → App integrity
+> → App Signing**.
+
+**3. Créer la clé API**
+
+- Dans la [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials),
+  cliquer **Create Credentials → API key**.
+- Une clé est générée. Cliquer **Edit API key** pour la restreindre :
+  - **Application restrictions** → choisir **Android apps**.
+  - **Add an item** :
+    - **Package name** : `com.matthysdev.exporouterprotectedroutes`
+      (ou ton propre `android.package` défini dans `app.json`).
+    - **SHA-1 certificate fingerprint** : la valeur copiée à l'étape 2.
+  - **API restrictions** → restreindre à **Maps SDK for Android**.
+- Cliquer **Save**.
+
+**4. Ajouter la clé dans `app.json`**
+
+```json
+{
+  "expo": {
+    "android": {
+      "package": "com.matthysdev.exporouterprotectedroutes",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSy...VOTRE_CLE_ICI..."
+        }
+      }
+    }
+  }
+}
+```
+
+> ⚠️ Ne **jamais** committer la clé dans un repo public. Pour ce projet
+> pédagogique, on la met directement dans `app.json` pour aller vite ; en
+> production, passer par `app.config.js` + variable d'env (par ex.
+> `process.env.GOOGLE_MAPS_API_KEY`).
+
+**5. Rebuild le dev client**
+
+Un simple reload Metro ne suffit pas (changement natif) :
+
+```bash
+npx expo run:android
+```
+
+**6. Vérifier**
+
+Lancer l'app, se connecter, ouvrir l'onglet **Carte** : Paris s'affiche avec
+un marqueur. Si la carte reste grise ou si l'app crashe :
+
+- Vérifier que **Maps SDK for Android** est bien activé dans le projet Google
+  Cloud sélectionné (et non un autre projet du même compte).
+- Vérifier que le `package name` et la `SHA-1` dans les restrictions de la
+  clé correspondent **exactement** à ceux du build courant.
+- Regarder les logs natifs : `npx expo run:android` puis filtrer
+  `adb logcat | grep -i "google\|maps\|api"` — Google y journalise les
+  erreurs d'authentification de clé.
 
 ## Idées d'exercices pour les élèves
 
